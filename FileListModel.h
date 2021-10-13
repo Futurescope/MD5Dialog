@@ -20,7 +20,7 @@ public:
 
 	/// brief: 计算列表项MD5
 	/// param: bOnlySelect 只计算选中项
-	void CalculateMD5(bool bOnlySelect = true);
+	void CalculateMD5(int nRowIndex);
 
 //重载接口
 public:

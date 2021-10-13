@@ -1,5 +1,9 @@
 #include "FileListModel.h"
 #include <QDir>
+#include <QCryptographicHash>
+#include <QDebug>
+
+
 
 FileListModel::FileListModel(QObject *parent)
 {
@@ -22,14 +26,54 @@ bool FileListModel::UpdateFileFolder(const QString& strFolder)
 	beginResetModel();
 	//重置model中的数据
 	m_fileList = dir.entryInfoList();
+	m_md5Value.resize(m_fileList.size());
 	//数据设置结束后调用endResetModel，此时会触发modelReset信号
 	endResetModel();
 
     return true;
 }
 
-void FileListModel::CalculateMD5(bool bOnlySelect)
+void FileListModel::CalculateMD5(int nRowIndex)
 {
+	if (m_md5Value.size() <= nRowIndex)
+	{
+		return;
+	}
+	qDebug() << m_fileList.at(nRowIndex).filePath();
+	QFile fileTemp(m_fileList.at(nRowIndex).filePath());
+	QCryptographicHash crypto(QCryptographicHash::Md5);
+	QString strRes;
+	double nReadProgress = 0;
+	if (fileTemp.open(QIODevice::ReadOnly))
+	{
+		long double nSize = fileTemp.size();
+		while (!fileTemp.atEnd())
+		{
+			crypto.addData(fileTemp.read(8192));
+
+			auto nRemains = fileTemp.bytesAvailable();
+			nReadProgress = ((nSize - nRemains) * 100)/ nSize;
+			qDebug() << nReadProgress;
+			setData(index(nRowIndex, 1), nReadProgress, Qt::DisplayRole);
+			emit dataChanged(index(nRowIndex, 1), index(nRowIndex, 1));
+		}
+	}
+	else
+	{
+		qDebug() << "Can't open file.";
+		strRes = "Can't open file.";
+		return;
+	}
+	if (!strRes.isEmpty())
+	{
+		m_md5Value[nRowIndex] = "no file";
+	}
+	else
+	{
+		m_md5Value[nRowIndex] = crypto.result().toHex().toUpper();
+	}
+	fileTemp.close();
+	emit dataChanged(index(nRowIndex, 1), index(nRowIndex, 1));
 }
 
 int FileListModel::rowCount(const QModelIndex & parent) const
