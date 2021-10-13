@@ -1,0 +1,10 @@
+.vs/
+debug/
+release/
+
+moc/
+rcc/
+ui_files/
+
+*.vcxproj
+*.vcxproj.filters
