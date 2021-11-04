@@ -8,9 +8,11 @@ message("You are running qmake on a generated .pro file. This may not work!")
 
 
 HEADERS += ./MD5Dialog.h \
-    ./FileListModel.h
+    ./FileListModel.h \
+	./MD5ProgressBar.h
 SOURCES += ./FileListModel.cpp \
     ./MD5Dialog.cpp \
+	./MD5ProgressBar.cpp \
     ./main.cpp
 FORMS += ./MD5Dialog.ui
 RESOURCES += MD5Dialog.qrc
