@@ -24,10 +24,10 @@ bool FileListModel::UpdateFileFolder(const QString& strFolder)
 	dir.setSorting(QDir::Name | QDir::IgnoreCase);
 
 	beginResetModel();
-	//ÖØÖÃmodelÖÐµÄÊý¾Ý
+	//é‡ç½®modelä¸­çš„æ•°æ®
 	m_fileList = dir.entryInfoList();
 	m_md5Value.resize(m_fileList.size());
-	//Êý¾ÝÉèÖÃ½áÊøºóµ÷ÓÃendResetModel£¬´ËÊ±»á´¥·¢modelResetÐÅºÅ
+	//æ•°æ®è®¾ç½®ç»“æŸåŽè°ƒç”¨endResetModelï¼Œæ­¤æ—¶ä¼šè§¦å‘modelResetä¿¡å·
 	endResetModel();
 
     return true;
@@ -44,6 +44,34 @@ void FileListModel::CalculateMD5(int nRowIndex)
 	QCryptographicHash crypto(QCryptographicHash::Md5);
 	QString strRes;
 	double nReadProgress = 0;
+	#if 0
+	// å¼€å§‹ä¸‹è½½ çº¿ç¨‹
+	void InitDownloadTerrainThread()
+	{
+		m_pElevDataTask = new DownLoadTask(m_bounds, OnUpdateTerProcess);
+		if (!m_pThreadTer)
+			m_pThreadTer = new QThread(this);
+
+		if (m_pThreadTer->isRunning())
+		{
+			m_pThreadTer->quit();
+			m_pThreadTer->wait();
+		}
+		m_pDataTask->moveToThread(m_pThreadTer);
+		connect(m_pThreadTer, &QThread::started, m_pDataTask, &DownLoadTask::execute);
+		connect(m_pDataTask, &DownLoadTask::taskFinished, [=]()
+		{
+			DownLoadTask::EStatus status = m_pDataTask->GetFinshdStatus();
+			if (status == DownLoadTask::EElevDataTaskFinishStatus::eSucceed)
+				m_eProcessState = MAKE_STATE::eProcessSucceed;
+			else
+				m_eProcessState = MAKE_STATE::eProcessFaild;
+			m_pThreadTer->exit(0);
+			m_pThreadTer->wait();
+		});
+		connect(m_pThreadTer, &QThread::finished, m_pDataTask, &QObject::deleteLater);
+	}
+	#endif
 	if (fileTemp.open(QIODevice::ReadOnly))
 	{
 		long double nSize = fileTemp.size();
@@ -131,13 +159,13 @@ QVariant FileListModel::headerData(int section, Qt::Orientation orientation, int
 		default:
 			return QVariant();
 		case 0:
-			return tr(u8"ÎÄ¼þ");
+			return tr(u8"æ–‡ä»¶");
 		case 1:
 			return tr(u8"MD5");
 		case 2:
 			return tr(u8"jsonKey");
 		case 3:
-			return tr(u8"¶Ô±È½á¹û");
+			return tr(u8"å¯¹æ¯”ç»“æžœ");
 		}
 	}
 	return QVariant();
