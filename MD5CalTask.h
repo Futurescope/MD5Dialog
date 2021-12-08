@@ -7,18 +7,20 @@ class MD5CalTask :public QObject
 	Q_OBJECT
 
 public:
-	MD5CalTask(QString strFilePath, QObject* parent = nullptr);
+	MD5CalTask(QString strFilePath, int nIndex, QObject* parent = nullptr);
+	int GetTaskIndex();
 
 public slots:
 	// doWork定义了线程要执行的操作
 	void doWork();
 
 signals:
-	void currentProgress(double dProgress);
-	void workFinished(QString strRes);
+	void currentProgress(int nIndex, double dProgress);
+	void workFinished(int nIndex, QString strRes);
 
 private:
 	QString m_strFileName;
+	int m_nIndex;
 };
 
 #if 0

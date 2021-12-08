@@ -2,8 +2,9 @@
 #include <QDir>
 #include <QCryptographicHash>
 
-MD5CalTask::MD5CalTask(QString strFilePath, QObject* parent /*= nullptr*/)
-	:m_strFileName(strFilePath)
+MD5CalTask::MD5CalTask(QString strFilePath, int nIndex, QObject* parent /*= nullptr*/)
+	: m_strFileName(strFilePath)
+	, m_nIndex(nIndex)
 {
 
 }
@@ -23,11 +24,11 @@ void MD5CalTask::doWork()
 
 			auto nRemains = fileTemp.bytesAvailable();
 			double dReadProgress = (nSize - nRemains) / nSize;
-			emit currentProgress(dReadProgress);
+			emit currentProgress(m_nIndex, dReadProgress);
 		}
 		strRes = crypto.result().toHex().toUpper();
 	}
 	fileTemp.close();
-	emit workFinished(strRes);
+	emit workFinished(m_nIndex, strRes);
 }
 

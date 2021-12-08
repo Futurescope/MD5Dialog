@@ -17,22 +17,23 @@ FileListModel::~FileListModel()
 
 bool FileListModel::UpdateFileFolder(const QString& strFolder)
 {
-    QDir dir(strFolder);
-    if (!dir.exists())
-    {
-        return false;
-    }
+	QDir dir(strFolder);
+	if (!dir.exists())
+	{
+		return false;
+	}
 	dir.setFilter(QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks);
 	dir.setSorting(QDir::Name | QDir::IgnoreCase);
 
 	beginResetModel();
 	//重置model中的数据
 	m_fileList = dir.entryInfoList();
-	m_md5Value.resize(m_fileList.size());
+	m_md5Value.fill("", m_fileList.size());
+	m_Progress.fill(0, m_fileList.size());
 	//数据设置结束后调用endResetModel，此时会触发modelReset信号
 	endResetModel();
 
-    return true;
+	return true;
 }
 
 void FileListModel::CalculateMD5(int nRowIndex)
@@ -42,22 +43,13 @@ void FileListModel::CalculateMD5(int nRowIndex)
 		return;
 	}
 	qDebug() << m_fileList.at(nRowIndex).filePath();
-	// 	QFile fileTemp(m_fileList.at(nRowIndex).filePath());
-	// 	QCryptographicHash crypto(QCryptographicHash::Md5);
-	QString strRes;
-	double nReadProgress = 0;
-
 	// 开始计算线程
-	MD5CalTask* pTask = new MD5CalTask(m_fileList.at(nRowIndex).filePath());
+	MD5CalTask* pTask = new MD5CalTask(m_fileList.at(nRowIndex).filePath(), nRowIndex);
 	QThread* pThread = new QThread;
 	pTask->moveToThread(pThread);
 	connect(pThread, &QThread::started, pTask, &MD5CalTask::doWork);
-	connect(pTask, &MD5CalTask::currentProgress, this, [&nReadProgress](double dProgress)
-	{
-		qDebug() << dProgress;
-		nReadProgress = dProgress;
-	});
-	connect(pTask, &MD5CalTask::workFinished, this, [pThread, &strRes](QString strTemp)
+	connect(pTask, &MD5CalTask::currentProgress, this, &FileListModel::SetProgress);
+	connect(pTask, &MD5CalTask::workFinished, this, [this, pThread](int nIndex, QString strTemp)
 	{
 		if (strTemp.isEmpty())
 		{
@@ -66,66 +58,30 @@ void FileListModel::CalculateMD5(int nRowIndex)
 			pThread->wait();
 			return;
 		}
-		strRes = strTemp;
-		qDebug() << strRes;
+		SetProgress(nIndex, 0);
+		m_md5Value[nIndex] = strTemp;
 	});
 	connect(pThread, &QThread::finished, pTask, &QObject::deleteLater);
 	pThread->start();
-#if 0
-	// 开始下载 线程
-	void InitDownloadTerrainThread()
-	{
-		m_pElevDataTask = new DownLoadTask(m_bounds, OnUpdateTerProcess);
-		if (!m_pThreadTer)
-			m_pThreadTer = new QThread(this);
-
-		if (m_pThreadTer->isRunning())
-		{
-			m_pThreadTer->quit();
-			m_pThreadTer->wait();
-		}
-		m_pDataTask->moveToThread(m_pThreadTer);
-		connect(m_pThreadTer, &QThread::started, m_pDataTask, &DownLoadTask::execute);
-		connect(m_pDataTask, &DownLoadTask::taskFinished, [=]()
-		{
-			DownLoadTask::EStatus status = m_pDataTask->GetFinshdStatus();
-			if (status == DownLoadTask::EElevDataTaskFinishStatus::eSucceed)
-				m_eProcessState = MAKE_STATE::eProcessSucceed;
-			else
-				m_eProcessState = MAKE_STATE::eProcessFaild;
-			m_pThreadTer->exit(0);
-			m_pThreadTer->wait();
-		});
-		connect(m_pThreadTer, &QThread::finished, m_pDataTask, &QObject::deleteLater);
-	}
-	#endif
-// 	if (fileTemp.open(QIODevice::ReadOnly))
-// 	{
-// 		long double nSize = fileTemp.size();
-// 		while (!fileTemp.atEnd())
-// 		{
-// 			crypto.addData(fileTemp.read(8192));
-// 
-// 			auto nRemains = fileTemp.bytesAvailable();
-// 			nReadProgress = ((nSize - nRemains) * 100)/ nSize;
-// 			qDebug() << nReadProgress;
-// 			setData(index(nRowIndex, 1), nReadProgress, Qt::DisplayRole);
-// 			emit dataChanged(index(nRowIndex, 1), index(nRowIndex, 1));
-// 		}
-// 	}
-//	else
-	m_md5Value[nRowIndex] = strRes;
 	emit dataChanged(index(nRowIndex, 1), index(nRowIndex, 1));
+}
+
+void FileListModel::SetProgress(int nIndex, double dProgress)
+{
+	if (nIndex < 0 || nIndex >= m_fileList.size()) return;
+	if (dProgress < 0 || dProgress > 1) return;
+	m_Progress[nIndex] = dProgress;
+	emit dataChanged(index(nIndex, 1), index(nIndex, 1));
 }
 
 int FileListModel::rowCount(const QModelIndex & parent) const
 {
-    return m_fileList.size();
+	return m_fileList.size();
 }
 
 int FileListModel::columnCount(const QModelIndex & parent) const
 {
-    return 4;
+	return 4;
 }
 
 QVariant FileListModel::data(const QModelIndex & index, int role) const
@@ -153,15 +109,19 @@ QVariant FileListModel::data(const QModelIndex & index, int role) const
 		case 0:
 			return m_fileList.size() > nRowIndex ? m_fileList.at(nRowIndex).fileName() : QVariant();
 		case 1:
-			return m_md5Value.size() > nRowIndex ? m_md5Value.at(nRowIndex) : QVariant();
+		{
+			if (qFuzzyIsNull(m_Progress.at(nRowIndex)))
+				return m_md5Value.size() > nRowIndex ? m_md5Value.at(nRowIndex) : QVariant();
+			return m_Progress.at(nRowIndex);
+		}
 		}
 	}
-    return QVariant();
+	return QVariant();
 }
 
 bool FileListModel::setData(const QModelIndex & index, const QVariant & value, int role)
 {
-    return false;
+	return false;
 }
 
 QVariant FileListModel::headerData(int section, Qt::Orientation orientation, int role) const
@@ -187,5 +147,5 @@ QVariant FileListModel::headerData(int section, Qt::Orientation orientation, int
 
 Qt::ItemFlags FileListModel::flags(const QModelIndex & index) const
 {
-    return Qt::ItemIsSelectable + Qt::ItemIsEnabled;
+	return Qt::ItemIsSelectable + Qt::ItemIsEnabled;
 }

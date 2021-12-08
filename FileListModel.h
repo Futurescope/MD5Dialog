@@ -22,6 +22,9 @@ public:
 	/// param: bOnlySelect 只计算选中项
 	void CalculateMD5(int nRowIndex);
 
+public slots:
+	void SetProgress(int nIndex, double dProgress);
+
 //重载接口
 public:
     int rowCount(const QModelIndex& parent) const override;
@@ -34,6 +37,7 @@ public:
 	Qt::ItemFlags flags(const QModelIndex& index) const override;
 
 private:
+	QVector<double> m_Progress;
 	QFileInfoList m_fileList;
 	QVector<QString> m_md5Value;
 };
