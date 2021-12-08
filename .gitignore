@@ -7,4 +7,5 @@ rcc/
 ui_files/
 
 *.vcxproj
-*.vcxproj.filters
+*.vcxproj.*
+/.qmake.stash
