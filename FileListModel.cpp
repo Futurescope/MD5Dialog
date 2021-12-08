@@ -1,11 +1,13 @@
 #include "FileListModel.h"
+#include "MD5CalTask.h"
+
 #include <QDir>
 #include <QCryptographicHash>
 #include <QDebug>
-
-
+#include <QThread>
 
 FileListModel::FileListModel(QObject *parent)
+	:QAbstractTableModel(parent)
 {
 }
 
@@ -40,11 +42,36 @@ void FileListModel::CalculateMD5(int nRowIndex)
 		return;
 	}
 	qDebug() << m_fileList.at(nRowIndex).filePath();
-	QFile fileTemp(m_fileList.at(nRowIndex).filePath());
-	QCryptographicHash crypto(QCryptographicHash::Md5);
+	// 	QFile fileTemp(m_fileList.at(nRowIndex).filePath());
+	// 	QCryptographicHash crypto(QCryptographicHash::Md5);
 	QString strRes;
 	double nReadProgress = 0;
-	#if 0
+
+	// 开始计算线程
+	MD5CalTask* pTask = new MD5CalTask(m_fileList.at(nRowIndex).filePath());
+	QThread* pThread = new QThread;
+	pTask->moveToThread(pThread);
+	connect(pThread, &QThread::started, pTask, &MD5CalTask::doWork);
+	connect(pTask, &MD5CalTask::currentProgress, this, [&nReadProgress](double dProgress)
+	{
+		qDebug() << dProgress;
+		nReadProgress = dProgress;
+	});
+	connect(pTask, &MD5CalTask::workFinished, this, [pThread, &strRes](QString strTemp)
+	{
+		if (strTemp.isEmpty())
+		{
+			qDebug() << "ERROR";
+			pThread->exit(0);
+			pThread->wait();
+			return;
+		}
+		strRes = strTemp;
+		qDebug() << strRes;
+	});
+	connect(pThread, &QThread::finished, pTask, &QObject::deleteLater);
+	pThread->start();
+#if 0
 	// 开始下载 线程
 	void InitDownloadTerrainThread()
 	{
@@ -72,35 +99,22 @@ void FileListModel::CalculateMD5(int nRowIndex)
 		connect(m_pThreadTer, &QThread::finished, m_pDataTask, &QObject::deleteLater);
 	}
 	#endif
-	if (fileTemp.open(QIODevice::ReadOnly))
-	{
-		long double nSize = fileTemp.size();
-		while (!fileTemp.atEnd())
-		{
-			crypto.addData(fileTemp.read(8192));
-
-			auto nRemains = fileTemp.bytesAvailable();
-			nReadProgress = ((nSize - nRemains) * 100)/ nSize;
-			qDebug() << nReadProgress;
-			setData(index(nRowIndex, 1), nReadProgress, Qt::DisplayRole);
-			emit dataChanged(index(nRowIndex, 1), index(nRowIndex, 1));
-		}
-	}
-	else
-	{
-		qDebug() << "Can't open file.";
-		strRes = "Can't open file.";
-		return;
-	}
-	if (!strRes.isEmpty())
-	{
-		m_md5Value[nRowIndex] = "no file";
-	}
-	else
-	{
-		m_md5Value[nRowIndex] = crypto.result().toHex().toUpper();
-	}
-	fileTemp.close();
+// 	if (fileTemp.open(QIODevice::ReadOnly))
+// 	{
+// 		long double nSize = fileTemp.size();
+// 		while (!fileTemp.atEnd())
+// 		{
+// 			crypto.addData(fileTemp.read(8192));
+// 
+// 			auto nRemains = fileTemp.bytesAvailable();
+// 			nReadProgress = ((nSize - nRemains) * 100)/ nSize;
+// 			qDebug() << nReadProgress;
+// 			setData(index(nRowIndex, 1), nReadProgress, Qt::DisplayRole);
+// 			emit dataChanged(index(nRowIndex, 1), index(nRowIndex, 1));
+// 		}
+// 	}
+//	else
+	m_md5Value[nRowIndex] = strRes;
 	emit dataChanged(index(nRowIndex, 1), index(nRowIndex, 1));
 }
 

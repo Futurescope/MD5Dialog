@@ -4,6 +4,7 @@
 #include <QApplication>
 
 MD5ProgressBar::MD5ProgressBar(QObject *parent /*= 0*/)
+	:QStyledItemDelegate(parent)
 {
 	//m_pBar = new QStyleOptionProgressBar(parent);
 }
