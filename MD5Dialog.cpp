@@ -3,6 +3,7 @@
 #include "FileListModel.h"
 #include "MD5ProgressBar.h"
 #include <QFileDialog>
+#include <QThread>
 
 MD5Dialog::MD5Dialog(QWidget *parent)
 	: QDialog(parent),
@@ -17,17 +18,17 @@ MD5Dialog::MD5Dialog(QWidget *parent)
 	ui->tbvFiles->setColumnWidth(0, 160);
 	ui->tbvFiles->setColumnWidth(1, 250);
 	ui->tbvFiles->verticalHeader()->resizeSections(QHeaderView::Stretch);
-	ui->tbvFiles->setSelectionMode(QAbstractItemView::MultiSelection);
+	ui->tbvFiles->setSelectionMode(QAbstractItemView::ExtendedSelection);
 	ui->tbvFiles->setSelectionBehavior(QAbstractItemView::SelectRows);
 	auto pBar = new MD5ProgressBar(this);
 	ui->tbvFiles->setItemDelegateForColumn(1, pBar);
-	// ÊäÈë¿ò
+	// è¾“å…¥æ¡†
 	connect(ui->letDir, &QLineEdit::editingFinished, this, [this]()
 	{
 		m_strDir = ui->letDir->text();
 		UpdateTabelList();
 	});
-	// ¶ÁÈ¡ÎÄ¼þ¼Ð
+	// è¯»å–æ–‡ä»¶å¤¹
 	connect(ui->pbtFolder, &QPushButton::clicked, this, [this]()
 	{
 		m_strDir = QFileDialog::getExistingDirectory(this, tr("Open Directory"), m_strDir,
@@ -39,8 +40,18 @@ MD5Dialog::MD5Dialog(QWidget *parent)
 		ui->letDir->setText(m_strDir);
 		UpdateTabelList();
 	});
-	// ¼ÆËãÈ«²¿MD5
-	// ¼ÆËãÑ¡ÖÐÏîMD5
+	// è®¡ç®—å…¨éƒ¨MD5
+	connect(ui->pbtCalAll, &QPushButton::clicked, this, [this]()
+	{
+		auto pModel = static_cast<FileListModel*>(ui->tbvFiles->model());
+		int nRowCount = pModel->rowCount();
+		for (int i = 0; i < nRowCount; ++i)
+		{
+			CalculateMd5(i);
+			QThread::sleep(1);
+		}
+	});
+	// è®¡ç®—é€‰ä¸­é¡¹MD5
 	connect(ui->pbtCalSelect, &QPushButton::clicked, this, [this]()
 	{
 		auto pModel = ui->tbvFiles->selectionModel();

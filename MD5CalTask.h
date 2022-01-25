@@ -11,7 +11,7 @@ public:
 	int GetTaskIndex();
 
 public slots:
-	// doWork¶¨ÒåÁËÏß³ÌÒªÖ´ĞĞµÄ²Ù×÷
+	// doWorkå®šä¹‰äº†çº¿ç¨‹è¦æ‰§è¡Œçš„æ“ä½œ
 	void doWork();
 
 signals:
@@ -24,16 +24,16 @@ private:
 };
 
 #if 0
-/// \brief »Øµ÷º¯Êı
+/// \brief å›è°ƒå‡½æ•°
 ///
-/// \param pCurrentView    µ±Ç°UiÊÓÍ¼
-/// \param pickedPt  Pickµ½µÄµã(ÉäÏßÓë¹¤×÷Æ½ÃæµÄ½»µã)
-/// \param mousePt   Êó±êµã
+/// \param pCurrentView    å½“å‰Uiè§†å›¾
+/// \param pickedPt  Pickåˆ°çš„ç‚¹(å°„çº¿ä¸å·¥ä½œå¹³é¢çš„äº¤ç‚¹)
+/// \param mousePt   é¼ æ ‡ç‚¹
 typedef std::function<void(gcmp::IUiView* pCurrentView, const gcmp::Vector3d& pickedPt, const gcmp::Vector3d& mousePt)> MoveCallback;
 
-/// \brief ´´½¨»Øµ÷º¯Êı
-/// \param *func    T¶ÔÏóµÄº¯ÊıÖ¸Õë
-/// \param object  T¶ÔÏó
+/// \brief åˆ›å»ºå›è°ƒå‡½æ•°
+/// \param *func    Tå¯¹è±¡çš„å‡½æ•°æŒ‡é’ˆ
+/// \param object  Tå¯¹è±¡
 template<typename T>
 static MoveCallback CreateMoveCallback(
 	void (T::*func)(gcmp::IUiView*, const gcmp::Vector3d& pos, const gcmp::Vector3d& mousePt),

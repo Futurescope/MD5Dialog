@@ -14,18 +14,21 @@ public:
     FileListModel(QObject *parent = nullptr);
     ~FileListModel();
 
-	/// brief: ¸ù¾İÎÄ¼ş¼ĞÂ·¾¶¸üĞÂÁĞ±í
-	/// param: strFolder ÎÄ¼ş¼ĞÂ·¾¶
+	/// brief: æ ¹æ®æ–‡ä»¶å¤¹è·¯å¾„æ›´æ–°åˆ—è¡¨
+	/// param: strFolder æ–‡ä»¶å¤¹è·¯å¾„
     bool UpdateFileFolder(const QString& strFolder);
 
-	/// brief: ¼ÆËãÁĞ±íÏîMD5
-	/// param: bOnlySelect Ö»¼ÆËãÑ¡ÖĞÏî
+	/// brief: è®¡ç®—åˆ—è¡¨é¡¹MD5
+	/// param: bOnlySelect åªè®¡ç®—é€‰ä¸­é¡¹
 	void CalculateMD5(int nRowIndex);
+
+	/// brief: è¿”å›è¡Œæ•°é‡
+	int rowCount() const;
 
 public slots:
 	void SetProgress(int nIndex, double dProgress);
 
-//ÖØÔØ½Ó¿Ú
+//é‡è½½æ¥å£
 public:
     int rowCount(const QModelIndex& parent) const override;
     int columnCount(const QModelIndex& parent) const override;

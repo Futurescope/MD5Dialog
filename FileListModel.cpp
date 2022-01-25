@@ -76,6 +76,11 @@ void FileListModel::SetProgress(int nIndex, double dProgress)
 
 int FileListModel::rowCount(const QModelIndex & parent) const
 {
+	return parent.isValid() ? 0 : m_fileList.size();
+}
+
+int FileListModel::rowCount() const
+{
 	return m_fileList.size();
 }
 
